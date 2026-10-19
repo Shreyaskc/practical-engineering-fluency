@@ -23,3 +23,5 @@ Manual UI checks: search including no results; expand lesson and hint; toggle co
 ## References
 
 Anthropic’s Staff+ Infrastructure posting explicitly describes work-like coding, a company/role-specific statement: https://job-boards.greenhouse.io/anthropic/jobs/4970314008 (checked 2026-10-19). Python docs: asyncio-task, sqlite3, profile. SQLite queryplanner. Links appear in the app.
+
+Run `node tools/ui-check.cjs` for the interaction logic harness. See VERIFICATION.md for tested boundaries and browser limits.
