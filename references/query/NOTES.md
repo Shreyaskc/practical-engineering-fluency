@@ -1,0 +1,1 @@
+Remove N+1 queries and supply an index that supports tenant/status filtering. Verify result isolation and a one-query budget. Explain index write overhead and why plan checks alone do not prove latency.

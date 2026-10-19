@@ -1,0 +1,1 @@
+Prevent duplicate effects after a crash between delivery and acknowledgment. The list is an educational single-worker idempotent sink; it is not durable or safe under concurrent workers. Propose a persistent unique-key sink and lease/fencing protocol.

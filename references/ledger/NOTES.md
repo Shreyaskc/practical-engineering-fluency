@@ -1,0 +1,1 @@
+Stable receipts across retries and reopen; reject invalid quantity and changed intent. Scope is a single tenant. Explain how to extend uniqueness for multiple tenants.

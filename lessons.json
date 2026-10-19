@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "title": "Read the system before changing it",
+    "tag": "Orientation",
+    "body": "Trace one request from entry point to persistence. Draw dependency direction, name the owner of each side effect, and identify the test seam. Read the README, public API and tests before scanning implementation.",
+    "task": "A fictional shipment service returns two receipts for one request. Inspect the ledger lab. Record the call path, state owner, and three unknowns before editing.",
+    "deliver": "Write a five-line repository map and a reproduction command.",
+    "solution": "A map is useful only if it predicts where an observable behavior originates.",
+    "hint": "Avoid reading every file. Follow one request and one failure path."
+  },
+  {
+    "id": 2,
+    "title": "Turn logs into falsifiable hypotheses",
+    "tag": "Debugging",
+    "body": "A log is an observation, not a cause. Separate event time from ingestion time; correlate by request and attempt identifiers. State what evidence would disprove your hypothesis.",
+    "task": "Log: request=q7 attempt=1 committed; request=q7 attempt=2 committed. Hypothesis A: client retried after losing the response. Hypothesis B: server duplicated the callback. What observation distinguishes them?",
+    "deliver": "Write a minimal reproducer with no sleeping or network calls.",
+    "solution": "An attempt ID changing with a stable request key supports a retry, but does not prove which layer retried. Instrument the boundary.",
+    "hint": "Use controlled fault injection immediately after commit."
+  },
+  {
+    "id": 3,
+    "title": "Regression tests that survive refactors",
+    "tag": "Testing",
+    "body": "Assert externally visible invariants, including the failure path. A regression should fail before the fix and pass afterward. Avoid proving only that a helper was called.",
+    "task": "In the ledger lab, assert that a repeated key returns the original receipt and leaves one row. Add a conflicting payload case and state the expected error.",
+    "deliver": "Capture baseline failure, patch, then rerun the entire small suite.",
+    "solution": "Assert the persisted count and receipt identity; a mock call count misses restart behavior.",
+    "hint": "Use a temporary SQLite file to exercise reopening."
+  },
+  {
+    "id": 4,
+    "title": "Design APIs around invariants",
+    "tag": "API design",
+    "body": "Specify input validity, identity, conflict semantics and atomicity before choosing endpoints. An idempotency key identifies an operation within an explicit scope; it is not a universal deduplication token.",
+    "task": "Design POST /shipments for tenant-scoped keys. Define empty key, negative quantity, same key/same payload, same key/different payload, and concurrent requests.",
+    "deliver": "Write an API contract and migration compatibility note.",
+    "solution": "Use (tenant, key) uniqueness and compare a canonical payload. Return conflict for a reused key with changed intent.",
+    "hint": "Do not let an upsert silently replace the original operation."
+  },
+  {
+    "id": 5,
+    "title": "Bound work and propagate cancellation",
+    "tag": "Concurrency",
+    "body": "A semaphore bounds active work, while a worker pool can also bound task creation. Cancellation is a control signal: release resources in finally and re-raise it. A timeout bounds waiting; it does not undo an external side effect.",
+    "task": "Repair the fanout lab. Honor a concurrency limit, preserve input order, cancel outstanding tasks on caller cancellation, and reject a zero limit.",
+    "deliver": "Measure peak active calls and prove active work returns to zero.",
+    "solution": "Use a bounded number of worker tasks for very large inputs; this small lab uses a semaphore with explicit cleanup.",
+    "hint": "Never catch BaseException and turn cancellation into success."
+  },
+  {
+    "id": 6,
+    "title": "Retries have a budget",
+    "tag": "Reliability",
+    "body": "Retry only failures classified as transient. Use bounded attempts, an overall deadline and capped exponential backoff with jitter. Never retry a non-idempotent operation without a deduplication contract.",
+    "task": "A fake adapter fails twice with TimeoutError then succeeds. Specify a retry budget of three attempts. Inject the sleep and clock functions; test without real delays.",
+    "deliver": "Submit a decision table for timeout, validation error, cancellation and deadline exhaustion.",
+    "solution": "Timeout may mean the write committed. Retry only using the original stable operation key. Cancellation must escape.",
+    "hint": "A per-attempt timeout alone can multiply total latency."
+  },
+  {
+    "id": 7,
+    "title": "Durable workers and crash windows",
+    "tag": "Workers",
+    "body": "A durable queue records work before acknowledgment. At-least-once delivery permits duplicates. A lease is temporary ownership; a fencing token rejects stale owners. Exactly-once effects require a transaction or a cooperating sink.",
+    "task": "Repair the outbox lab. Simulate a crash after the sink records the message and before acknowledgment. Restart the worker using the same database and sink.",
+    "deliver": "Show one effect after redelivery and explain the remaining cross-system limitation.",
+    "solution": "An idempotent sink closes the duplicate-effect window; marking sent before delivery creates a lost-message window.",
+    "hint": "Keep the same event identity across attempts."
+  },
+  {
+    "id": 8,
+    "title": "Resource lifetime and races",
+    "tag": "Correctness",
+    "body": "A resource leak is an acquired resource whose release is not guaranteed on every exit path. A race exists when the result depends on an uncontrolled ordering of concurrent operations. The GIL is not a transaction.",
+    "task": "Review a check-then-insert around an in-memory set used by two workers. Both pass the check before either inserts. Replace timing luck with a barrier-based reproduction.",
+    "deliver": "Describe lock scope, database uniqueness, and exception-safe cleanup.",
+    "solution": "Enforce uniqueness where state is shared. A process-local lock cannot protect a second process.",
+    "hint": "Use context managers for files and transactions; test exception paths."
+  },
+  {
+    "id": 9,
+    "title": "Profile before optimizing",
+    "tag": "Performance",
+    "body": "Measure a representative workload and separate CPU, waiting, allocation and database time. Query plans describe an execution strategy; an index trades writes and space for selective reads.",
+    "task": "Repair the query lab. Inspect EXPLAIN QUERY PLAN for a tenant/status lookup, add the useful composite index, and eliminate per-row lookups.",
+    "deliver": "Report query count and plan shape before/after; avoid machine-specific millisecond claims.",
+    "solution": "One joined query avoids N+1 round trips. An index beginning with the tenant predicate can serve the selective lookup.",
+    "hint": "A fast tiny fixture is not evidence of production capacity."
+  },
+  {
+    "id": 10,
+    "title": "Refactor without moving the contract",
+    "tag": "Maintainability",
+    "body": "A safe refactor changes structure while preserving agreed observable behavior. Characterization tests record existing behavior, including awkward edges; decide explicitly which quirks remain contractual.",
+    "task": "Extract persistence behind a repository interface in the ledger lab. Keep validation in the service and SQLite details in the adapter. Preserve receipt semantics.",
+    "deliver": "Submit a narrow diff, characterization tests and rollback path.",
+    "solution": "Depend on a small protocol defined by the consumer. Do not build a generic framework for one adapter.",
+    "hint": "Separate behavioral fixes from structural moves when possible."
+  },
+  {
+    "id": 11,
+    "title": "Review for failure, ownership and change",
+    "tag": "Code review",
+    "body": "Review the contract first, then the failure paths, shared state and operational evidence. Distinguish blockers from optional preferences. Explain the consequence and propose a test.",
+    "task": "Review: except Exception: return success; acknowledge(); send(). Identify the lost-work window and misleading success response.",
+    "deliver": "Write three comments with severity, consequence and suggested verification.",
+    "solution": "Block on acknowledging before the effect. Request a crash-window test. Naming preferences are nonblocking.",
+    "hint": "Ask who owns retries and how the next engineer detects a stuck item."
+  },
+  {
+    "id": 12,
+    "title": "Staff-level synthesis",
+    "tag": "Simulation",
+    "body": "Engineering fluency includes prioritization, clear assumptions and incremental delivery. A correct patch needs a defensible contract, regression evidence and an explanation of its limits.",
+    "task": "Run a 60-minute simulation: 10 read/map, 10 reproduce, 20 patch, 10 tests, 10 review and operational notes. Choose ledger or outbox.",
+    "deliver": "Deliver a patch, commands, risk note and follow-up plan.",
+    "solution": "Score evidence and correctness separately from speed. State incomplete work honestly; never hide a failing test.",
+    "hint": "Reserve time to explain tradeoffs and what you would measure next."
+  }
+]
